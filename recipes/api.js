@@ -22,6 +22,14 @@ router.get("/detail", (_, res) =>
  */
 
 // connect to postgres
+const pg = require("pg");
+const pool = new pg.Pool({
+  user: "postgres", 
+  host: "localhost", 
+  database: "recipeguru",
+  password: "lol",
+  port: 5432,
+});
 
 router.get("/search", async function (req, res) {
   console.log("search recipes");
@@ -29,8 +37,23 @@ router.get("/search", async function (req, res) {
   // return recipe_id, title, and the first photo as url
   //
   // for recipes without photos, return url as default.jpg
+  const { rows } = await pool.query(`
+    SELECT DISTINCT ON (r.recipe_id) 
+    r.recipe_id, 
+    r.title, 
+    COALESCE (rp.url, 'default.jpg') AS url 
+    FROM 
+        recipes r 
+    LEFT JOIN 
+        recipes_photos rp 
+    ON 
+        r.recipe_id = rp.recipe_id;
+  `);
 
-  res.status(501).json({ status: "not implemented", rows: [] });
+  console.log({ rows });
+  res.json({ rows }).end();
+
+  //res.status(501).json({ status: "not implemented", rows: [] });
 });
 
 router.get("/get", async (req, res) => {
